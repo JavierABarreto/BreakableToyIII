@@ -1,18 +1,27 @@
 package com.breakabletoy.SpotifyApp.Repository;
 
-import com.breakabletoy.SpotifyApp.Models.TokenModel;
-
-import java.util.HashMap;
+import com.breakabletoy.SpotifyApp.DTO.SpotifyTokenModelDTO;
 
 public class TokenRepository {
-    private HashMap<String, TokenModel> tokenRepository = new HashMap<>();
+    private SpotifyTokenModelDTO tokenRepository = null;
+    private static TokenRepository instance = null;
 
-    public void addToken(String userId, String token, String refreshToken) {
-        TokenModel newToken = new TokenModel(token, refreshToken);
-        tokenRepository.put(userId, newToken);
+    private TokenRepository() {}
+
+    public static TokenRepository getInstance() {
+        if(instance != null) {
+            return instance;
+        } else {
+            instance = new TokenRepository();
+            return instance;
+        }
     }
 
-    public TokenModel getUser(String userId) {
-        return tokenRepository.get(userId);
+    public void setToken(SpotifyTokenModelDTO tokenData) {
+        tokenRepository = tokenData;
+    }
+
+    public SpotifyTokenModelDTO getTokenData() {
+        return tokenRepository;
     }
 }
