@@ -3,8 +3,11 @@ package com.breakabletoy.SpotifyApp.Service;
 import com.breakabletoy.SpotifyApp.DTO.SpotifyTokenModelDTO;
 import com.breakabletoy.SpotifyApp.Exceptions.AuthCustomException;
 import com.breakabletoy.SpotifyApp.Models.Responses.SpotifyTokenModelResponse;
+import com.breakabletoy.SpotifyApp.Properties.EnvProperties;
 import com.breakabletoy.SpotifyApp.Repository.TokenRepository;
 import com.breakabletoy.SpotifyApp.Util.UrlConstants;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -23,20 +26,22 @@ import java.util.logging.Logger;
 public class AuthService {
     private final RestTemplate restTemplate = new RestTemplate();
     private TokenRepository tokenRepository = TokenRepository.getInstance();
+    private final EnvProperties envProperties;
+
     private static final Logger logger = Logger.getLogger(AuthService.class.getName());
 
-    @Value("${spotify.client.id}")
-    private String clientId;
-
-    @Value("${spotify.client.secret}")
-    private String clientSecret;
+    @Autowired
+    public AuthService(EnvProperties envProperties) {
+        this.envProperties = envProperties;
+    }
 
     public String authenticate() {
         String scope = "user-read-private user-read-email user-top-read";
+
         try {
            String AUTHORIZE_URL =  UrlConstants.AUTHORIZE_URL +
                    "response_type=code&" +
-                   "client_id=" + clientId + "&" +
+                   "client_id=" + envProperties.getClientId() + "&" +
                    "scope=" + URLEncoder.encode(scope, StandardCharsets.UTF_8) + "&" +
                    "redirect_uri=" + URLEncoder.encode(UrlConstants.REDIRECT_URL, StandardCharsets.UTF_8);
 
@@ -50,7 +55,10 @@ public class AuthService {
     }
 
     public void setSpotifyToken(String code) {
-        String authHeader = Base64.getEncoder().encodeToString((clientId+":"+clientSecret).getBytes());
+        String authHeader = Base64.getEncoder()
+                .encodeToString(
+                    (envProperties.getClientId()+":"+envProperties.getClientSecret()).getBytes()
+                );
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -99,8 +107,8 @@ public class AuthService {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.set("grant_type", "refresh_token");
         body.set("refresh_token", tokenRepository.getTokenData().refreshToken());
-        body.set("client_id", clientId);
-        body.set("client_secret", clientSecret);
+        body.set("client_id", envProperties.getClientId());
+        body.set("client_secret", envProperties.getClientSecret());
 
         HttpEntity request = new HttpEntity<>(body, headers);
 

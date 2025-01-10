@@ -11,7 +11,6 @@ import com.breakabletoy.SpotifyApp.Models.Responses.SearchModelResponse;
 import com.breakabletoy.SpotifyApp.Models.Responses.TopArtistsModelResponse;
 import com.breakabletoy.SpotifyApp.Repository.TokenRepository;
 import com.breakabletoy.SpotifyApp.Util.UrlConstants;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,6 @@ import java.util.logging.Logger;
 
 @Service
 public class SpotifyApiService {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SpotifyApiService.class);
     private final RestTemplate restTemplate = new RestTemplate();
     private final AuthService authService;
     private static final Logger logger = Logger.getLogger(SpotifyApiService.class.getName());
