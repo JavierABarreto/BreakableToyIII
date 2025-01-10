@@ -11,6 +11,7 @@ import com.breakabletoy.SpotifyApp.Models.Responses.SearchModelResponse;
 import com.breakabletoy.SpotifyApp.Models.Responses.TopArtistsModelResponse;
 import com.breakabletoy.SpotifyApp.Repository.TokenRepository;
 import com.breakabletoy.SpotifyApp.Util.UrlConstants;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -20,11 +21,14 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Service
 public class SpotifyApiService {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SpotifyApiService.class);
     private final RestTemplate restTemplate = new RestTemplate();
     private final AuthService authService;
+    private static final Logger logger = Logger.getLogger(SpotifyApiService.class.getName());
 
     TokenRepository tokenRepository = TokenRepository.getInstance();
 
@@ -34,14 +38,7 @@ public class SpotifyApiService {
     }
 
     public ResponseEntity<List<TopArtistsItemModel>> getTopArtists() {
-        if (tokenRepository.getTokenData() == null) {
-            throw new UnauthorizedCustomException(
-                HttpStatus.UNAUTHORIZED,
-                "User is not logged in, cannot interact with the API."
-            );
-        } else if (tokenRepository.getTokenData().isTokenExpired()) {
-            authService.refreshToken();
-        }
+        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
 
         SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
 
@@ -52,13 +49,15 @@ public class SpotifyApiService {
 
         try {
             ResponseEntity<TopArtistsModelResponse> response = restTemplate.exchange(
-                UrlConstants.SPOTIFY_API_URL + "/me/top/artistse?offset=0&limit=10",
+                UrlConstants.SPOTIFY_API_URL + "/me/top/artists?offset=0&limit=10",
                 HttpMethod.GET,
                 entity,
                 TopArtistsModelResponse.class
             );
 
             if(response.getStatusCode() != HttpStatus.OK) {
+                logger.warning("There's been an error while requesting the users top artists.");
+
                 throw new ErrorCustomException(
                         response.getStatusCode(),
                         response.getBody().toString()
@@ -66,8 +65,12 @@ public class SpotifyApiService {
             }
 
             TopArtistsModelResponse res = response.getBody();
+
+            logger.info("User successfuly retrieved the user top artists data.");
             return new ResponseEntity<List<TopArtistsItemModel>>(res.items(), HttpStatus.OK);
         } catch (HttpClientErrorException e) {
+            logger.warning("There's been an error while requesting the users top artists.");
+
             throw new ErrorCustomException(
                 e.getStatusCode(),
                 e.getMessage()
@@ -77,14 +80,7 @@ public class SpotifyApiService {
 
 
     public ResponseEntity<ArtistModelResponse> getArtist(String artistId) {
-        if (tokenRepository.getTokenData() == null) {
-            throw new UnauthorizedCustomException(
-                    HttpStatus.UNAUTHORIZED,
-                    "User is not logged in, cannot interact with the API."
-            );
-        } else if (tokenRepository.getTokenData().isTokenExpired()) {
-            authService.refreshToken();
-        }
+        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
 
         SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
 
@@ -101,14 +97,19 @@ public class SpotifyApiService {
             );
 
             if(response.getStatusCode() != HttpStatus.OK) {
+                logger.warning("There's been an error while requesting the artists data.");
+
                 throw new ErrorCustomException(
                     response.getStatusCode(),
                     response.getBody().toString()
                 );
             }
 
+            logger.info("User successfuly retrieved the artists data.");
             return new ResponseEntity<ArtistModelResponse>(response.getBody(), HttpStatus.OK);
         } catch (HttpClientErrorException e) {
+            logger.warning("There's been an error while requesting the artists data.");
+
             throw new ErrorCustomException(
                     e.getStatusCode(),
                     e.getMessage()
@@ -118,14 +119,7 @@ public class SpotifyApiService {
 
 
     public ResponseEntity<AlbumModelResponse> getAlbum(String albumId) {
-        if (tokenRepository.getTokenData() == null) {
-            throw new UnauthorizedCustomException(
-                    HttpStatus.UNAUTHORIZED,
-                    "User is not logged in, cannot interact with the API."
-            );
-        } else if (tokenRepository.getTokenData().isTokenExpired()) {
-            authService.refreshToken();
-        }
+        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
 
         SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
         HttpHeaders headers = new HttpHeaders();
@@ -142,14 +136,19 @@ public class SpotifyApiService {
             );
 
             if(response.getStatusCode() != HttpStatus.OK) {
+                logger.warning("There's been an error while requesting the album data.");
+
                 throw new ErrorCustomException(
                         response.getStatusCode(),
                         response.getBody().toString()
                 );
             }
 
+            logger.info("User successfuly retrieved the album data.");
             return new ResponseEntity<AlbumModelResponse>(response.getBody(), HttpStatus.OK);
         } catch (HttpClientErrorException e) {
+            logger.warning("There's been an error while requesting the album data.");
+
             throw new ErrorCustomException(
                     e.getStatusCode(),
                     e.getMessage()
@@ -159,14 +158,7 @@ public class SpotifyApiService {
 
 
     public ResponseEntity<SearchModelDTO> search(String query) {
-        if (tokenRepository.getTokenData() == null) {
-            throw new UnauthorizedCustomException(
-                    HttpStatus.UNAUTHORIZED,
-                    "User is not logged in, cannot interact with the API."
-            );
-        } else if (tokenRepository.getTokenData().isTokenExpired()) {
-            authService.refreshToken();
-        }
+        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
 
         String url = UrlConstants.SPOTIFY_API_URL + "/search?" +
                 "q=track" + URLEncoder.encode(query, StandardCharsets.UTF_8) +
@@ -187,6 +179,8 @@ public class SpotifyApiService {
             );
 
             if(response.getStatusCode() != HttpStatus.OK) {
+                logger.warning("There's been an error while requesting the search data.");
+
                 throw new ErrorCustomException(
                         response.getStatusCode(),
                         response.getBody().toString()
@@ -199,12 +193,28 @@ public class SpotifyApiService {
                     response.getBody().albums().items()
             );
 
+            logger.info("User successfuly retrieved the search data.");
             return new ResponseEntity<SearchModelDTO>(data, HttpStatus.OK);
         } catch (HttpClientErrorException e) {
+            logger.warning("There's been an error while requesting the search data.");
+
             throw new ErrorCustomException(
                 e.getStatusCode(),
                 e.getMessage()
             );
+        }
+    }
+
+    private void tokenValidation () {
+        if (tokenRepository.getTokenData() == null) {
+            logger.warning("User is not logged in, can't interact with the API.");
+
+            throw new UnauthorizedCustomException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not logged in, cannot interact with the API."
+            );
+        } else if (tokenRepository.getTokenData().isTokenExpired()) {
+            authService.refreshToken();
         }
     }
 }

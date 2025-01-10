@@ -17,12 +17,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.logging.Logger;
 
 @Service
 public class AuthService {
     private final RestTemplate restTemplate = new RestTemplate();
     private TokenRepository tokenRepository = TokenRepository.getInstance();
-    private static AuthService instance = null;
+    private static final Logger logger = Logger.getLogger(AuthService.class.getName());
 
     @Value("${spotify.client.id}")
     private String clientId;
@@ -32,7 +33,7 @@ public class AuthService {
 
     public String authenticate() {
         String scope = "user-read-private user-read-email user-top-read";
-       try {
+        try {
            String AUTHORIZE_URL =  UrlConstants.AUTHORIZE_URL +
                    "response_type=code&" +
                    "client_id=" + clientId + "&" +
@@ -40,12 +41,12 @@ public class AuthService {
                    "redirect_uri=" + URLEncoder.encode(UrlConstants.REDIRECT_URL, StandardCharsets.UTF_8);
 
            return AUTHORIZE_URL;
-       } catch (HttpClientErrorException e) {
+        } catch (HttpClientErrorException e) {
            throw new AuthCustomException(
                e.getStatusCode(),
                "There has been an error while requiring the authenticate code: " + e.getMessage()
            );
-       }
+        }
     }
 
     public void setSpotifyToken(String code) {
@@ -74,13 +75,15 @@ public class AuthService {
             long expireDate = Instant.now().toEpochMilli() / 1000;
             expireDate += data.expires_in();
 
+
             SpotifyTokenModelDTO token = new SpotifyTokenModelDTO(
                     data.access_token(),
                     data.refresh_token(),
                     expireDate
             );
-            
+
             tokenRepository.setToken(token);
+            logger.info("User logged in an the token has been set.");
         } catch (HttpClientErrorException e) {
             throw new AuthCustomException(
                 e.getStatusCode(),
@@ -121,6 +124,7 @@ public class AuthService {
             );
 
             tokenRepository.setToken(token);
+            logger.info("User token expired and a new one was generated using the user's refreshToken.");
         } catch (HttpClientErrorException e) {
             throw new AuthCustomException(
                 e.getStatusCode(),

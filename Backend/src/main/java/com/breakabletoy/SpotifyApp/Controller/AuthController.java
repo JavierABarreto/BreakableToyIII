@@ -1,7 +1,7 @@
 package com.breakabletoy.SpotifyApp.Controller;
 
+import com.breakabletoy.SpotifyApp.Interface.AuthControllerInterface;
 import com.breakabletoy.SpotifyApp.Service.AuthService;
-import com.breakabletoy.SpotifyApp.Service.SpotifyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth/spotify")
-public class AuthController {
+public class AuthController implements AuthControllerInterface {
     private final AuthService authService;
 
     @Autowired
@@ -18,13 +18,15 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @GetMapping
+    @Override
+    @PostMapping
     public ResponseEntity<Void> login() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.LOCATION, authService.authenticate());  // Redirect to this URL
         return new ResponseEntity<>(headers, HttpStatus.FOUND);  // 302 - Found (temporary redirect)
     }
 
+    @Override
     @GetMapping("/callback")
     public void callback(@RequestParam(required = false) String code) {
         authService.setSpotifyToken(code);
