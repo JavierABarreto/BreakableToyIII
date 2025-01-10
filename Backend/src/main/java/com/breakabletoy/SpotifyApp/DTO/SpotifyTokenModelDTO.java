@@ -10,8 +10,4 @@ public record SpotifyTokenModelDTO(
     public boolean isTokenExpired() {
         return expire_date < Instant.now().getEpochSecond();
     }
-
-    public boolean isTokenNull() {
-        return token == null;
-    }
 }

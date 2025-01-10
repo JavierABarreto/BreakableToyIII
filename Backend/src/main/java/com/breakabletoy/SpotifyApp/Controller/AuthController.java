@@ -25,7 +25,6 @@ public class AuthController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);  // 302 - Found (temporary redirect)
     }
 
-
     @GetMapping("/callback")
     public void callback(@RequestParam(required = false) String code) {
         authService.setSpotifyToken(code);

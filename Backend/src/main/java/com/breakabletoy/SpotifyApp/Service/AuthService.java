@@ -1,6 +1,7 @@
 package com.breakabletoy.SpotifyApp.Service;
 
 import com.breakabletoy.SpotifyApp.DTO.SpotifyTokenModelDTO;
+import com.breakabletoy.SpotifyApp.Exceptions.AuthCustomException;
 import com.breakabletoy.SpotifyApp.Models.Responses.SpotifyTokenModelResponse;
 import com.breakabletoy.SpotifyApp.Repository.TokenRepository;
 import com.breakabletoy.SpotifyApp.Util.UrlConstants;
@@ -9,6 +10,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
@@ -18,14 +20,15 @@ import java.util.Base64;
 
 @Service
 public class AuthService {
+    private final RestTemplate restTemplate = new RestTemplate();
+    private TokenRepository tokenRepository = TokenRepository.getInstance();
+    private static AuthService instance = null;
+
     @Value("${spotify.client.id}")
     private String clientId;
 
     @Value("${spotify.client.secret}")
     private String clientSecret;
-
-    private final RestTemplate restTemplate = new RestTemplate();
-    private TokenRepository tokenRepository = TokenRepository.getInstance();
 
     public String authenticate() {
         String scope = "user-read-private user-read-email user-top-read";
@@ -37,8 +40,11 @@ public class AuthService {
                    "redirect_uri=" + URLEncoder.encode(UrlConstants.REDIRECT_URL, StandardCharsets.UTF_8);
 
            return AUTHORIZE_URL;
-       } catch (Exception e) {
-           throw new RuntimeException("There has been an error while requiring the authenticate code: " + e.getMessage());
+       } catch (HttpClientErrorException e) {
+           throw new AuthCustomException(
+               e.getStatusCode(),
+               "There has been an error while requiring the authenticate code: " + e.getMessage()
+           );
        }
     }
 
@@ -71,11 +77,15 @@ public class AuthService {
             SpotifyTokenModelDTO token = new SpotifyTokenModelDTO(
                     data.access_token(),
                     data.refresh_token(),
-                    1736264279
+                    expireDate
             );
+            
             tokenRepository.setToken(token);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (HttpClientErrorException e) {
+            throw new AuthCustomException(
+                e.getStatusCode(),
+                "There has been an error while setting the authenticate token: " + e.getMessage()
+            );
         }
     }
 
@@ -84,16 +94,17 @@ public class AuthService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "refresh_token");
-        body.add("refresh_token", tokenRepository.getTokenData().refreshToken());
-        body.add("client_id", clientId);
-        body.add("refresh_token", clientSecret);
+        body.set("grant_type", "refresh_token");
+        body.set("refresh_token", tokenRepository.getTokenData().refreshToken());
+        body.set("client_id", clientId);
+        body.set("client_secret", clientSecret);
 
         HttpEntity request = new HttpEntity<>(body, headers);
 
         try {
-            HttpEntity<SpotifyTokenModelResponse> response = restTemplate.postForEntity(
+            HttpEntity<SpotifyTokenModelResponse> response = restTemplate.exchange(
                     UrlConstants.REQUIRE_TOKEN_URL,
+                    HttpMethod.POST,
                     request,
                     SpotifyTokenModelResponse.class
             );
@@ -110,8 +121,11 @@ public class AuthService {
             );
 
             tokenRepository.setToken(token);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (HttpClientErrorException e) {
+            throw new AuthCustomException(
+                e.getStatusCode(),
+                "There has been an error while refreshing the authenticate token: " + e.getMessage()
+            );
         }
     }
 }

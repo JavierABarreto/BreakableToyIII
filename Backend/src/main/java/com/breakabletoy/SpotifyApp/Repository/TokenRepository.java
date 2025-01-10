@@ -6,7 +6,7 @@ public class TokenRepository {
     private SpotifyTokenModelDTO tokenRepository = null;
     private static TokenRepository instance = null;
 
-    private TokenRepository() {}
+    private TokenRepository() { }
 
     public static TokenRepository getInstance() {
         if(instance != null) {
