@@ -19,7 +19,7 @@ public class AuthController implements AuthControllerInterface {
     }
 
     @Override
-    @PostMapping
+    @GetMapping
     public ResponseEntity<Void> login() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.LOCATION, authService.authenticate());  // Redirect to this URL
@@ -28,7 +28,9 @@ public class AuthController implements AuthControllerInterface {
 
     @Override
     @GetMapping("/callback")
-    public void callback(@RequestParam(required = false) String code) {
-        authService.setSpotifyToken(code);
+    public ResponseEntity callback(@RequestParam(required = false) String code) {
+        // redirect the user to the frontend
+
+        return new ResponseEntity<>("", HttpStatus.OK); //replace to redirect the user to the front with the userId
     }
 }

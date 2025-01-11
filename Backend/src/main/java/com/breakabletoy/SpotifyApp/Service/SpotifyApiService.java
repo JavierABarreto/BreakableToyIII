@@ -35,10 +35,10 @@ public class SpotifyApiService {
         this.authService = authService;
     }
 
-    public ResponseEntity<List<TopArtistsItemModel>> getTopArtists() {
-        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
+    public ResponseEntity<List<TopArtistsItemModel>> getTopArtists(String userId) {
+        tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
-        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
+        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(userId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(tokenInfo.token());
@@ -77,10 +77,10 @@ public class SpotifyApiService {
     }
 
 
-    public ResponseEntity<ArtistModelResponse> getArtist(String artistId) {
-        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
+    public ResponseEntity<ArtistModelResponse> getArtist(String userId, String artistId) {
+        tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
-        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
+        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(artistId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(tokenInfo.token());
@@ -116,10 +116,10 @@ public class SpotifyApiService {
     }
 
 
-    public ResponseEntity<AlbumModelResponse> getAlbum(String albumId) {
-        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
+    public ResponseEntity<AlbumModelResponse> getAlbum(String userId, String albumId) {
+        tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
-        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
+        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(userId);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(tokenInfo.token());
 
@@ -155,15 +155,15 @@ public class SpotifyApiService {
     }
 
 
-    public ResponseEntity<SearchModelDTO> search(String query) {
-        tokenValidation(); // Repeated function that validates that the token exists or it's not expired
+    public ResponseEntity<SearchModelDTO> search(String userId, String query) {
+        tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
         String url = UrlConstants.SPOTIFY_API_URL + "/search?" +
                 "q=track" + URLEncoder.encode(query, StandardCharsets.UTF_8) +
                 "&type=album,artist,track" +
                 "&limit=10&offset=0";
 
-        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData();
+        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(userId);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(tokenInfo.token());
 
@@ -203,16 +203,16 @@ public class SpotifyApiService {
         }
     }
 
-    private void tokenValidation () {
-        if (tokenRepository.getTokenData() == null) {
+    private void tokenValidation (String userId) {
+        if (tokenRepository.getTokenData(userId) == null) {
             logger.warning("User is not logged in, can't interact with the API.");
 
             throw new UnauthorizedCustomException(
                     HttpStatus.UNAUTHORIZED,
                     "User is not logged in, cannot interact with the API."
             );
-        } else if (tokenRepository.getTokenData().isTokenExpired()) {
-            authService.refreshToken();
+        } else if (tokenRepository.getTokenData(userId).isTokenExpired()) {
+            authService.refreshToken(userId);
         }
     }
 }

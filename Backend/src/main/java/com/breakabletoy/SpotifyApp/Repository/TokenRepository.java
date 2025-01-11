@@ -2,8 +2,10 @@ package com.breakabletoy.SpotifyApp.Repository;
 
 import com.breakabletoy.SpotifyApp.DTO.SpotifyTokenModelDTO;
 
+import java.util.HashMap;
+
 public class TokenRepository {
-    private SpotifyTokenModelDTO tokenRepository = null;
+    private HashMap tokenRepository = new HashMap<String, SpotifyTokenModelDTO>();
     private static TokenRepository instance = null;
 
     private TokenRepository() { }
@@ -17,11 +19,11 @@ public class TokenRepository {
         }
     }
 
-    public void setToken(SpotifyTokenModelDTO tokenData) {
-        tokenRepository = tokenData;
+    public void setToken(String userId, SpotifyTokenModelDTO tokenData) {
+        tokenRepository.put(userId, tokenData);
     }
 
-    public SpotifyTokenModelDTO getTokenData() {
-        return tokenRepository;
+    public SpotifyTokenModelDTO getTokenData(String userId) {
+        return (SpotifyTokenModelDTO) tokenRepository.get(userId);
     }
 }

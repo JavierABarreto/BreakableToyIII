@@ -7,10 +7,7 @@ import com.breakabletoy.SpotifyApp.Models.Complement.TopArtistsItemModel;
 import com.breakabletoy.SpotifyApp.Service.SpotifyApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,22 +21,33 @@ public class SpotifyAppController {
     }
 
     @GetMapping("/me/top/artists")
-    public ResponseEntity<List<TopArtistsItemModel>> topArtists() {
-        return spotifyApiService.getTopArtists();
+    public ResponseEntity<List<TopArtistsItemModel>> topArtists(
+        @RequestHeader("userId") String userId
+    ) {
+        return spotifyApiService.getTopArtists(userId);
     }
 
     @GetMapping("/artists/{id}")
-    public ResponseEntity<ArtistModelResponse> getArtist(@PathVariable("id") String id) {
-        return spotifyApiService.getArtist(id);
+    public ResponseEntity<ArtistModelResponse> getArtist(
+        @PathVariable("id") String id,
+        @RequestHeader("userId") String userId
+    ) {
+        return spotifyApiService.getArtist(id, userId);
     }
 
     @GetMapping("/albums/{id}")
-    public ResponseEntity<AlbumModelResponse> getAlbum(@PathVariable("id") String id) {
-        return spotifyApiService.getAlbum(id);
+    public ResponseEntity<AlbumModelResponse> getAlbum(
+        @PathVariable("id") String id,
+        @RequestHeader("userId") String userId
+    ) {
+        return spotifyApiService.getAlbum(id, userId);
     }
 
     @GetMapping("/search") //  Allow search for artists, albums, or tracks.
-    public ResponseEntity<SearchModelDTO> search(@RequestParam("q") String query) {
-        return spotifyApiService.search(query);
+    public ResponseEntity<SearchModelDTO> search(
+        @RequestParam("q") String query,
+        @RequestHeader("userId") String userId
+    ) {
+        return spotifyApiService.search(query, userId);
     }
 }

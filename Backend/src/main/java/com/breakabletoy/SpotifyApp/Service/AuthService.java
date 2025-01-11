@@ -2,13 +2,13 @@ package com.breakabletoy.SpotifyApp.Service;
 
 import com.breakabletoy.SpotifyApp.DTO.SpotifyTokenModelDTO;
 import com.breakabletoy.SpotifyApp.Exceptions.AuthCustomException;
+import com.breakabletoy.SpotifyApp.Exceptions.ErrorCustomException;
 import com.breakabletoy.SpotifyApp.Models.Responses.SpotifyTokenModelResponse;
+import com.breakabletoy.SpotifyApp.Models.Responses.UserProfileModelResponse;
 import com.breakabletoy.SpotifyApp.Properties.EnvProperties;
 import com.breakabletoy.SpotifyApp.Repository.TokenRepository;
 import com.breakabletoy.SpotifyApp.Util.UrlConstants;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -20,6 +20,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 @Service
@@ -54,7 +55,7 @@ public class AuthService {
         }
     }
 
-    public void setSpotifyToken(String code) {
+    public String setSpotifyToken(String code) {
         String authHeader = Base64.getEncoder()
                 .encodeToString(
                     (envProperties.getClientId()+":"+envProperties.getClientSecret()).getBytes()
@@ -72,6 +73,7 @@ public class AuthService {
         HttpEntity request = new HttpEntity<>(body, headers);
 
         try {
+
             HttpEntity<SpotifyTokenModelResponse> response = restTemplate.postForEntity(
                 UrlConstants.REQUIRE_TOKEN_URL,
                 request,
@@ -90,8 +92,12 @@ public class AuthService {
                     expireDate
             );
 
-            tokenRepository.setToken(token);
+            String userId = getUserId(data.access_token());
+
+            tokenRepository.setToken(userId, token);
             logger.info("User logged in an the token has been set.");
+
+            return userId;
         } catch (HttpClientErrorException e) {
             throw new AuthCustomException(
                 e.getStatusCode(),
@@ -100,13 +106,13 @@ public class AuthService {
         }
     }
 
-    public void refreshToken() {
+    public void refreshToken(String userId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.set("grant_type", "refresh_token");
-        body.set("refresh_token", tokenRepository.getTokenData().refreshToken());
+        body.set("refresh_token", tokenRepository.getTokenData(userId).refreshToken());
         body.set("client_id", envProperties.getClientId());
         body.set("client_secret", envProperties.getClientSecret());
 
@@ -131,12 +137,44 @@ public class AuthService {
                     expireDate
             );
 
-            tokenRepository.setToken(token);
+            tokenRepository.setToken(userId, token);
             logger.info("User token expired and a new one was generated using the user's refreshToken.");
         } catch (HttpClientErrorException e) {
             throw new AuthCustomException(
                 e.getStatusCode(),
                 "There has been an error while refreshing the authenticate token: " + e.getMessage()
+            );
+        }
+    }
+
+    public String getUserId (String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        HttpEntity request = new HttpEntity<>(new HashMap<>(), headers);
+
+        try {
+            ResponseEntity<UserProfileModelResponse> response = restTemplate.exchange(
+                UrlConstants.SPOTIFY_API_URL + "/me",
+                HttpMethod.GET,
+                request,
+                UserProfileModelResponse.class
+            );
+
+            if(response.getStatusCode() != HttpStatus.OK) {
+                logger.warning("There's been an error while requesting the user id.");
+
+                throw new ErrorCustomException(
+                        response.getStatusCode(),
+                        response.getBody().toString()
+                );
+            }
+
+            return response.getBody().id();
+        } catch (HttpClientErrorException e) {
+            throw new ErrorCustomException(
+                    e.getStatusCode(),
+                    e.getMessage()
             );
         }
     }
