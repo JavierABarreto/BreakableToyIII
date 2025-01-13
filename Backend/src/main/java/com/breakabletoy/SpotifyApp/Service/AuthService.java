@@ -60,7 +60,6 @@ public class AuthService {
                 .encodeToString(
                     (envProperties.getClientId()+":"+envProperties.getClientSecret()).getBytes()
                 );
-        System.out.println(envProperties.getClientId()+":"+envProperties.getClientSecret());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -133,7 +132,6 @@ public class AuthService {
     }
 
     protected String getUserId (String token) {
-        System.out.println(envProperties.getClientId());
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
 
@@ -166,7 +164,6 @@ public class AuthService {
     }
 
     public String setSpotifyTokenAndGetUserData(String code) {
-        System.out.println(envProperties.getClientId());
         SpotifyTokenModelResponse data = getSpotifyToken(code);
 
         try {

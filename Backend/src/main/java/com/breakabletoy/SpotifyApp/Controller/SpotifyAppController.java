@@ -22,7 +22,7 @@ public class SpotifyAppController {
 
     @GetMapping("/me/top/artists")
     public ResponseEntity<List<TopArtistsItemModel>> topArtists(
-        @RequestHeader("userId") String userId
+        @RequestParam("userId") String userId
     ) {
         return spotifyApiService.getTopArtists(userId);
     }
@@ -30,7 +30,7 @@ public class SpotifyAppController {
     @GetMapping("/artists/{id}")
     public ResponseEntity<ArtistModelResponse> getArtist(
         @PathVariable("id") String id,
-        @RequestHeader("userId") String userId
+        @RequestParam("userId") String userId
     ) {
         return spotifyApiService.getArtist(id, userId);
     }
@@ -38,7 +38,7 @@ public class SpotifyAppController {
     @GetMapping("/albums/{id}")
     public ResponseEntity<AlbumModelResponse> getAlbum(
         @PathVariable("id") String id,
-        @RequestHeader("userId") String userId
+        @RequestParam("userId") String userId
     ) {
         return spotifyApiService.getAlbum(id, userId);
     }
@@ -46,7 +46,7 @@ public class SpotifyAppController {
     @GetMapping("/search") //  Allow search for artists, albums, or tracks.
     public ResponseEntity<SearchModelDTO> search(
         @RequestParam("q") String query,
-        @RequestHeader("userId") String userId
+        @RequestParam("userId") String userId
     ) {
         return spotifyApiService.search(query, userId);
     }

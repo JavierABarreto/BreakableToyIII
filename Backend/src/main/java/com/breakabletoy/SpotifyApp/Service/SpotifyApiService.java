@@ -77,11 +77,10 @@ public class SpotifyApiService {
     }
 
 
-    public ResponseEntity<ArtistModelResponse> getArtist(String userId, String artistId) {
+    public ResponseEntity<ArtistModelResponse> getArtist(String artistId, String userId) {
         tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
-        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(artistId);
-
+        SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(userId);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(tokenInfo.token());
 
@@ -116,7 +115,7 @@ public class SpotifyApiService {
     }
 
 
-    public ResponseEntity<AlbumModelResponse> getAlbum(String userId, String albumId) {
+    public ResponseEntity<AlbumModelResponse> getAlbum(String albumId, String userId) {
         tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
         SpotifyTokenModelDTO tokenInfo = tokenRepository.getTokenData(userId);
@@ -155,7 +154,7 @@ public class SpotifyApiService {
     }
 
 
-    public ResponseEntity<SearchModelDTO> search(String userId, String query) {
+    public ResponseEntity<SearchModelDTO> search(String query, String userId) {
         tokenValidation(userId); // Repeated function that validates that the token exists or it's not expired
 
         String url = UrlConstants.SPOTIFY_API_URL + "/search?" +
