@@ -55,11 +55,12 @@ public class AuthService {
         }
     }
 
-    public String setSpotifyToken(String code) {
+    protected SpotifyTokenModelResponse getSpotifyToken(String code) {
         String authHeader = Base64.getEncoder()
                 .encodeToString(
                     (envProperties.getClientId()+":"+envProperties.getClientSecret()).getBytes()
                 );
+        System.out.println(envProperties.getClientId()+":"+envProperties.getClientSecret());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -73,31 +74,15 @@ public class AuthService {
         HttpEntity request = new HttpEntity<>(body, headers);
 
         try {
-
             HttpEntity<SpotifyTokenModelResponse> response = restTemplate.postForEntity(
                 UrlConstants.REQUIRE_TOKEN_URL,
                 request,
                 SpotifyTokenModelResponse.class
             );
 
-            SpotifyTokenModelResponse data = response.getBody();
+            logger.info("User successfully logged in and returned token data.");
 
-            long expireDate = Instant.now().toEpochMilli() / 1000;
-            expireDate += data.expires_in();
-
-
-            SpotifyTokenModelDTO token = new SpotifyTokenModelDTO(
-                    data.access_token(),
-                    data.refresh_token(),
-                    expireDate
-            );
-
-            String userId = getUserId(data.access_token());
-
-            tokenRepository.setToken(userId, token);
-            logger.info("User logged in an the token has been set.");
-
-            return userId;
+            return response.getBody();
         } catch (HttpClientErrorException e) {
             throw new AuthCustomException(
                 e.getStatusCode(),
@@ -147,7 +132,8 @@ public class AuthService {
         }
     }
 
-    public String getUserId (String token) {
+    protected String getUserId (String token) {
+        System.out.println(envProperties.getClientId());
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
 
@@ -175,6 +161,35 @@ public class AuthService {
             throw new ErrorCustomException(
                     e.getStatusCode(),
                     e.getMessage()
+            );
+        }
+    }
+
+    public String setSpotifyTokenAndGetUserData(String code) {
+        System.out.println(envProperties.getClientId());
+        SpotifyTokenModelResponse data = getSpotifyToken(code);
+
+        try {
+            long expireDate = Instant.now().toEpochMilli() / 1000;
+            expireDate += data.expires_in();
+
+
+            SpotifyTokenModelDTO token = new SpotifyTokenModelDTO(
+                data.access_token(),
+                data.refresh_token(),
+                expireDate
+            );
+
+            String userId = getUserId(data.access_token());
+
+            tokenRepository.setToken(userId, token);
+            logger.info("User logged in an the token has been set.");
+
+            return userId;
+        } catch (HttpClientErrorException e) {
+            throw new AuthCustomException(
+                    e.getStatusCode(),
+                    "There has been an error while setting the authenticate token: " + e.getMessage()
             );
         }
     }
