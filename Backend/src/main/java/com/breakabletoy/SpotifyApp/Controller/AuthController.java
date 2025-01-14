@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth/spotify")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController implements AuthControllerInterface {
     private final AuthService authService;
 
@@ -20,10 +21,8 @@ public class AuthController implements AuthControllerInterface {
 
     @Override
     @PostMapping
-    public ResponseEntity<Void> login() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.LOCATION, authService.authenticate());  // Redirect to this URL
-        return new ResponseEntity<>(headers, HttpStatus.FOUND);  // 302 - Found (temporary redirect)
+    public ResponseEntity login() {
+        return new ResponseEntity<>(authService.authenticate(), HttpStatus.OK);
     }
 
     @Override
