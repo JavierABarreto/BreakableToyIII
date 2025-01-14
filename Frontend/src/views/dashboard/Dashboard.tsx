@@ -1,13 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import './dashboard.css'
-import { Outlet } from 'react-router-dom'
-import { Navbar } from '../../components/navbar/navbar'
+import { TopArtistsSection } from '../../components/topArtistsSection/topArtistsSection';
 
 export const Dashboard: React.FC = () => {
   return (
-    <div className='pageBackground'>
-      <Navbar />
-      <Outlet />
+    <div className='dashboard'>
+      <TopArtistsSection />
     </div>
   )
 }

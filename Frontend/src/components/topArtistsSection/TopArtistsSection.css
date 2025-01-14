@@ -1,0 +1,27 @@
+#topArtists {
+  background-color: #e0e1dd;
+  height: 30vh;
+  margin: 4vh;
+  padding: 1vh;
+}
+
+.topArtistsTitle {
+  color: '#e0e1dd';
+  margin-bottom: 2vh;
+  margin-left: 1vh;
+}
+
+.topArtistsContainer {
+  display: flex;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.artistInfo {
+  padding: 1vh;
+}
+
+.artistInfo .genres {
+  font-style: italic;
+}

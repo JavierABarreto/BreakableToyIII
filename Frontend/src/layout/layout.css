@@ -2,3 +2,8 @@
   padding: 0;
   margin: 0;
 }
+
+.pageBackground {
+  height: 100vh;
+  background-color: #0d1b2a;
+}
